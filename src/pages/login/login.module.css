@@ -1,0 +1,354 @@
+/* Variables CSS */
+:root {
+  --kiwi-dark: #072b31;
+  --kiwi-light: #b3f5d6;
+  --kiwi-background: #b3f5d6;
+  --white: #ffffff;
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+  --error-color: #dc3545;
+  --success-color: #28a745;
+  --border-radius: 12px;
+  --box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
+/* Container principal */
+.loginContainer {
+  min-height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, var(--kiwi-background), var(--kiwi-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tarjeta de login */
+.loginCard {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  transition: var(--transition);
+}
+
+.loginCard:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Logo container */
+.logoContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.circleIcon {
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+/* Logo de texto */
+.textLogoContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.textLogo {
+  height: 42px;
+  object-fit: contain;
+}
+
+/* Subtítulo */
+.subtitle {
+  color: var(--gray-700);
+  font-size: 16px;
+  font-weight: 400;
+  text-align: center;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+/* Formulario */
+.loginForm {
+  width: 100%;
+}
+
+/* Grupos de input */
+.inputGroup {
+  margin-bottom: 24px;
+}
+
+.inputGroup:last-of-type {
+  margin-bottom: 32px;
+}
+
+/* Labels */
+.label {
+  display: block;
+  color: var(--gray-700);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--gray-800);
+  background-color: var(--white);
+  transition: var(--transition);
+  box-sizing: border-box;
+}
+
+.input::placeholder {
+  color: var(--gray-500);
+  font-size: 16px;
+}
+
+.input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(56, 242, 171, 0.1);
+}
+
+.input:disabled {
+  background-color: var(--gray-100);
+  color: var(--gray-500);
+  cursor: not-allowed;
+}
+
+.inputError {
+  border-color: var(--error-color);
+}
+
+.inputError:focus {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+/* Container de contraseña */
+.passwordContainer {
+  position: relative;
+}
+
+.passwordInput {
+  padding-right: 50px;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  color: var(--gray-500);
+  transition: var(--transition);
+  border-radius: 4px;
+}
+
+.passwordToggle:hover {
+  color: var(--gray-700);
+  background-color: var(--gray-100);
+}
+
+.passwordToggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Mensajes de error */
+.inputErrorText {
+  display: block;
+  color: var(--error-color);
+  font-size: 12px;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Botón de envío */
+.submitButton {
+  width: 100%;
+  background-color: var(--kiwi-dark);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #0a363c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(7, 43, 49, 0.3);
+}
+
+.submitButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submitButton:disabled {
+  background-color: var(--gray-400);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading */
+.loadingText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid var(--white);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Footer */
+.footer {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.copyright {
+  color: var(--gray-500);
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .loginContainer {
+    padding: 16px;
+  }
+  
+  .loginCard {
+    padding: 32px 24px;
+    max-width: 100%;
+  }
+  
+  .circleIcon {
+    width: 64px;
+    height: 64px;
+  }
+  
+  .textLogo {
+    height: 36px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  
+  .input {
+    padding: 12px 14px;
+    font-size: 16px; /* Prevenir zoom en iOS */
+  }
+  
+  .passwordInput {
+    padding-right: 46px;
+  }
+  
+  .passwordToggle {
+    right: 10px;
+    font-size: 14px;
+  }
+  
+  .submitButton {
+    padding: 14px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 375px) {
+  .loginCard {
+    padding: 24px 20px;
+  }
+  
+  .inputGroup {
+    margin-bottom: 20px;
+  }
+  
+  .inputGroup:last-of-type {
+    margin-bottom: 24px;
+  }
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Modo alto contraste */
+@media (prefers-contrast: high) {
+  .input {
+    border-width: 3px;
+  }
+  
+  .submitButton {
+    border: 2px solid var(--kiwi-dark);
+  }
+}
+
