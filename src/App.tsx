@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/login/LoginPage';
 import LandingClinicas from './pages/landingClinicas/landingClinicas';
 import RegisterPatients from './pages/register/registerPatients';
+import NotFound from './pages/notFound/notFound';
 
 
 
@@ -16,7 +17,7 @@ const App: React.FC = () => {
         {/* Ruta dinámica con parámetro clinicId */}
         <Route path="/register-patients/:clinicId" element={<RegisterPatients />} />
         {/* Ruta de fallback para /register-patients sin parámetro */}
-        <Route path="/register-patients" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

@@ -1,45 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import styles from './registerPatients.module.css';
 import kiwiTextGreenIcon from '../../assets/kiwiTextGreenLightIcon.svg';
-import { ALLOWED_CLINICS } from '../../constants/constants.clinicas';
-import Footer from '../components/footer';
+import { ALLOWED_CLINICS, CLINIC_SEDES } from '../../constants/constants.clinicas';
+import Footer from '../../components/footer/footer';
 
-// Componente para mostrar cuando la clínica no se encuentra en la lista de permitidas
-const NotFoundComponent: React.FC = () => {
-  return (
-    <div className={styles.container}>
-      <div className={styles.logoContainer}>
-        <img src={kiwiTextGreenIcon} alt="Kiwi Logo" className={styles.logo} />
-      </div>
-      <div className={styles.notFoundContent}>
-        <h1 className={styles.notFoundTitle}>Página no encontrada</h1>
-        <p className={styles.notFoundText}>
-          No pudimos encontrar la página que buscabas. Esto puede ser porque:
-        </p>
-        <ul className={styles.notFoundList}>
-          <li>Hay un error en la URL que escribiste en el navegador web. Comprueba la URL e inténtalo de nuevo.</li>
-          <li>La página que estás buscando cambió de ubicación o fue eliminada.</li>
-        </ul>
-      </div>
-      <Footer />
-    </div>
-  );
-};
-
+// Tipos
 interface FormData {
-  nombresApellidosRecepcionista: string;
-  nombresApellidosCliente: string;
-  clinica: string;
-  //especialidadMedica: string;
-  tipoDocumento: string;
-  dni: string;
-  ingresoMensualPromedio: string;
-  costoAproximadoTratamiento: string;
-  //codigoAprovTratamiento: string;
-  telefono: string;
-  //correoElectronico: string;
+  full_name_receptionist: string;
+  full_name_client: string;
+  headquarters_clinica: string;
+  document_type: string;
+  identification_number: string;
+  average_income: string;
+  phone: string;
 }
 
 interface FormErrors {
@@ -48,150 +23,160 @@ interface FormErrors {
 
 
 const RegisterPatients: React.FC = () => {
-  // const navigate = useNavigate(); // Commented out as we're no longer redirecting
+  const navigate = useNavigate();
   const { clinicId } = useParams<{ clinicId: string }>();
-  const [isValidClinic, setIsValidClinic] = useState<boolean>(true);
+
+  // Obtener las sedes de la clínica seleccionada
+  const clinicSedes = clinicId ? CLINIC_SEDES[clinicId] || [] : [];
+
+  // Estado para controlar si la clínica es válida
+  const [isValidClinic, setIsValidClinic] = useState<boolean>(false);
+  const [isValidating, setIsValidating] = useState<boolean>(true);
 
   // Validar que la clínica exista en nuestras constantes permitidas
   useEffect(() => {
-    if (!clinicId || !Object.values(ALLOWED_CLINICS).includes(clinicId as any)) {
-      // En lugar de redireccionar, mostraremos el componente NotFoundComponent
-      setIsValidClinic(false);
-    } else {
-      setIsValidClinic(true);
-    }
-  }, [clinicId]);
+    const validateClinic = () => {
+      setIsValidating(true);
+      if (!clinicId || !Object.values(ALLOWED_CLINICS).includes(clinicId as any)) {
+        setIsValidClinic(false);
+        // Redireccionar a not-found después de validar
+        navigate('/not-found', { replace: true });
+      } else {
+        setIsValidClinic(true);
+      }
+      setIsValidating(false);
+    };
+
+    validateClinic();
+  }, [clinicId, navigate]);
 
   const [formData, setFormData] = useState<FormData>({
-    nombresApellidosRecepcionista: '',
-    nombresApellidosCliente: '',
-    clinica: '',
-    //especialidadMedica: '',
-    tipoDocumento: '',
-    dni: '',
-    ingresoMensualPromedio: '',
-    costoAproximadoTratamiento: '',
-    //codigoAprovTratamiento: '',
-    telefono: '',
-    //correoElectronico: ''
+    full_name_receptionist: '',
+    full_name_client: '',
+    headquarters_clinica: '',
+    document_type: '',
+    identification_number: '',
+    average_income: '',
+    phone: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Opciones para selects
- const clinicasOptions = [
-    'SJL',
-    'Miraflores',
-    'San Isidro',
-  ];
-
-  /*
-  const especialidadesOptions = [
-    'Cardiología',
-    'Dermatología',
-    'Endocrinología',
-    'Gastroenterología',
-    'Ginecología',
-    'Neurología',
-    'Oftalmología',
-    'Oncología',
-    'Pediatría',
-    'Psiquiatría',
-    'Traumatología',
-    'Urología',
-    'Otro'
-  ]; */
-
    const tipoDocumentoOptions = [
     'DNI',
     'CE'
   ];
 
-  // Validaciones
+  // Validadores específicos por campo
+  const validators = {
+    // Validar nombre (general para cualquier campo de nombre)
+    validateName: (value: string): string => {
+      if (!value.trim()) {
+        return 'Este campo es requerido';
+      } 
+      if (value.length < 3) {
+        return 'Debe tener al menos 3 caracteres';
+      } 
+      if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(value)) {
+        return 'Solo se permiten letras y espacios';
+      }
+      return '';
+    },
+    
+    // Validar selección
+    validateSelection: (value: string): string => {
+      return !value.trim() ? 'Debe seleccionar una opción' : '';
+    },
+    
+    // Validar número de documento
+    validateDocumentNumber: (value: string): string => {
+      if (!value.trim()) {
+        return 'El documento es requerido';
+      }
+      if (!/^\d{8}$/.test(value)) {
+        return 'El documento debe tener exactamente 8 dígitos';
+      }
+      return '';
+    },
+    
+    // Validar valor numérico
+    validateNumericValue: (value: string): string => {
+      if (!value.trim()) {
+        return 'Este campo es requerido';
+      }
+      if (isNaN(Number(value)) || Number(value) <= 0) {
+        return 'Debe ser un número válido mayor a 0';
+      }
+      return '';
+    },
+    
+    // Validar teléfono
+    validatePhone: (value: string): string => {
+      if (!value.trim()) {
+        return 'El teléfono es requerido';
+      } 
+      if (!/^[0-9+\-\s()]+$/.test(value)) {
+        return 'Formato de teléfono inválido';
+      } 
+      if (value.replace(/[^0-9]/g, '').length < 9) {
+        return 'Debe tener al menos 9 dígitos';
+      }
+      return '';
+    }
+  };
+
+  // Función principal de validación
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
 
-    // Validación Nombres y Apellidos Recepcionista
-    if (!formData.nombresApellidosRecepcionista.trim()) {
-      newErrors.nombresApellidosRecepcionista = 'Este campo es requerido';
-    } else if (formData.nombresApellidosRecepcionista.length < 3) {
-      newErrors.nombresApellidosRecepcionista = 'Debe tener al menos 3 caracteres';
-    } else if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(formData.nombresApellidosRecepcionista)) {
-      newErrors.nombresApellidosRecepcionista = 'Solo se permiten letras y espacios';
-    }
-
-    // Validación Nombres y Apellidos Cliente
-    if (!formData.nombresApellidosCliente.trim()) {
-      newErrors.nombresApellidosCliente = 'Este campo es requerido';
-    } else if (formData.nombresApellidosCliente.length < 3) {
-      newErrors.nombresApellidosCliente = 'Debe tener al menos 3 caracteres';
-    } else if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(formData.nombresApellidosCliente)) {
-      newErrors.nombresApellidosCliente = 'Solo se permiten letras y espacios';
-    }
-
-    // Validación Clínica
-    if (!formData.clinica.trim()) {
-      newErrors.clinica = 'Debe seleccionar una clínica';
-    }
-
-    // Esta validación se omite ya que el campo está comentado en la UI
-    // if (!formData.especialidadMedica.trim()) {
-    //   newErrors.especialidadMedica = 'Debe seleccionar una especialidad';
-    // }
-
-     // Validación Tipo de Documento
-    if (!formData.tipoDocumento.trim()) {
-      newErrors.tipoDocumento = 'Debe seleccionar un tipo de documento';
-    }
-
-    // Validación DNI
-    if (!formData.dni.trim()) {
-      newErrors.dni = 'El DNI es requerido';
-    } else if (!/^\d{8}$/.test(formData.dni)) {
-      newErrors.dni = 'El DNI debe tener exactamente 8 dígitos';
-    }
-
-    // Validación Ingreso Mensual
-    if (!formData.ingresoMensualPromedio.trim()) {
-      newErrors.ingresoMensualPromedio = 'Este campo es requerido';
-    } else if (isNaN(Number(formData.ingresoMensualPromedio)) || Number(formData.ingresoMensualPromedio) <= 0) {
-      newErrors.ingresoMensualPromedio = 'Debe ser un número válido mayor a 0';
-    }
-
-     // Validación Costo Aproximado Tratamiento
-    if (!formData.costoAproximadoTratamiento.trim()) {
-      newErrors.costoAproximadoTratamiento = 'Este campo es requerido';
-    } else if (isNaN(Number(formData.costoAproximadoTratamiento)) || Number(formData.costoAproximadoTratamiento) <= 0) {
-      newErrors.costoAproximadoTratamiento = 'Debe ser un número válido mayor a 0';
-    }
-
-    // Esta validación se omite ya que el campo está comentado en la UI
-    // if (!formData.codigoAprovTratamiento.trim()) {
-    //   newErrors.codigoAprovTratamiento = 'Este campo es requerido';
-    // } else if (formData.codigoAprovTratamiento.length < 3) {
-    //   newErrors.codigoAprovTratamiento = 'Debe tener al menos 3 caracteres';
-    // }
-
-    // Validación Teléfono
-    if (!formData.telefono.trim()) {
-      newErrors.telefono = 'El teléfono es requerido';
-    } else if (!/^[0-9+\-\s()]+$/.test(formData.telefono)) {
-      newErrors.telefono = 'Formato de teléfono inválido';
-    } else if (formData.telefono.replace(/[^0-9]/g, '').length < 9) {
-      newErrors.telefono = 'Debe tener al menos 9 dígitos';
-    }
-
-    // Validación Correo Electrónico (Opcional)
-    /*if (formData.correoElectronico.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correoElectronico)) {
-      newErrors.correoElectronico = 'Formato de correo electrónico inválido';
-    }*/
+    // Aplicamos los validadores específicos para cada campo
+    const nameError = validators.validateName(formData.full_name_receptionist);
+    if (nameError) newErrors.full_name_receptionist = nameError;
+    
+    const clientNameError = validators.validateName(formData.full_name_client);
+    if (clientNameError) newErrors.full_name_client = clientNameError;
+    
+    const sedeError = validators.validateSelection(formData.headquarters_clinica);
+    if (sedeError) newErrors.headquarters_clinica = sedeError;
+    
+    const docTypeError = validators.validateSelection(formData.document_type);
+    if (docTypeError) newErrors.document_type = docTypeError;
+    
+    const docNumberError = validators.validateDocumentNumber(formData.identification_number);
+    if (docNumberError) newErrors.identification_number = docNumberError;
+    
+    const incomeError = validators.validateNumericValue(formData.average_income);
+    if (incomeError) newErrors.average_income = incomeError;
+    
+    const phoneError = validators.validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
 
     return newErrors;
   };
 
-  // Manejo de cambios en inputs
+  // Validar un campo individual
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'full_name_receptionist':
+      case 'full_name_client':
+        return validators.validateName(value);
+      case 'headquarters_clinica':
+      case 'document_type':
+        return validators.validateSelection(value);
+      case 'identification_number':
+        return validators.validateDocumentNumber(value);
+      case 'average_income':
+        return validators.validateNumericValue(value);
+      case 'phone':
+        return validators.validatePhone(value);
+      default:
+        return '';
+    }
+  };
+
+  // Manejo de cambios en inputs con validación en tiempo real
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -199,13 +184,22 @@ const RegisterPatients: React.FC = () => {
       [name]: value
     }));
 
-    // Limpiar error específico cuando el usuario empiece a escribir
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    // Validar el campo en tiempo real, pero solo después de que el usuario haya interactuado con él
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
+  // Manejo de blur para validación cuando el usuario sale de un campo
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
   };
 
   // Envío del formulario
@@ -274,28 +268,27 @@ const RegisterPatients: React.FC = () => {
     }
   };
 
-  // Función para limpiar formulario
-  /*const handleReset = () => {
-    setFormData({
-      nombresApellidosRecepcionista: '',
-      nombresApellidosCliente: '',
-      clinica: '',
-      especialidadMedica: '',
-      dni: '',
-      ingresoMensualPromedio: '',
-      codigoAprovTratamiento: '',
-      telefono: '',
-      correoElectronico: ''
-    });
-    setErrors({});
-    setIsSubmitted(false);
-  };*/
+
+
+  // Si estamos validando, mostramos un estado de carga
+  if (isValidating) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loadingContainer}>
+          <div className={styles.spinner}></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Si la clínica no es válida, no renderizamos nada porque ya hemos redirigido
+  if (!isValidClinic) {
+    return null;
+  }
 
   return (
     <>
-      {!isValidClinic ? (
-        <NotFoundComponent />
-      ) : (
         <div className={styles.container}>
           <div className={styles.logoContainer}>
             <img 
@@ -313,8 +306,15 @@ const RegisterPatients: React.FC = () => {
 
             {/* Mensaje de éxito */}
             {isSubmitted && (
-              <div className={styles.successMessage}>
+              <div className={styles.successMessage} role="alert">
+                <div className={styles.successIcon}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                </div>
                 <h2>¡Formulario enviado exitosamente!</h2>
+                <p>Pronto nos pondremos en contacto contigo.</p>
               </div>
             )}
 
@@ -330,290 +330,215 @@ const RegisterPatients: React.FC = () => {
 
             {/* Nombres y Apellidos Recepcionista */}
             <div className={styles.inputGroup}>
-              <label htmlFor="nombresApellidosRecepcionista" className={styles.label}>
+              <label htmlFor="full_name_receptionist" className={styles.label}>
                 Nombres y Apellidos Recepcionista
               </label>
               <input
                 type="text"
-                id="nombresApellidosRecepcionista"
-                name="nombresApellidosRecepcionista"
-                value={formData.nombresApellidosRecepcionista}
+                id="full_name_receptionist"
+                name="full_name_receptionist"
+                value={formData.full_name_receptionist}
                 onChange={handleInputChange}
-                className={`${styles.input} ${errors.nombresApellidosRecepcionista ? styles.inputError : ''}`}
+                onBlur={handleBlur}
+                className={`${styles.input} ${errors.full_name_receptionist ? styles.inputError : ''}`}
                 disabled={isLoading}
                 autoComplete="name"
+                placeholder="Ingrese su nombre completo"
               />
-              {errors.nombresApellidosRecepcionista && (
+              {errors.full_name_receptionist && (
                 <span className={styles.inputErrorText}>
                   <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.nombresApellidosRecepcionista}
+                  {errors.full_name_receptionist}
                 </span>
               )}
             </div>
 
                {/* Clínica */}
             <div className={styles.inputGroup}>
-              <label htmlFor="clinica" className={styles.label}>
+              <label htmlFor="headquarters_clinica" className={styles.label}>
                 Sede <span className={styles.required}>(obligatorio)</span>
               </label>
               <select
-                id="clinica"
-                name="clinica"
-                value={formData.clinica}
+                id="headquarters_clinica"
+                name="headquarters_clinica"
+                value={formData.headquarters_clinica}
                 onChange={handleInputChange}
-                className={`${styles.select} ${errors.clinica ? styles.inputError : ''}`}
+                onBlur={handleBlur}
+                className={`${styles.select} ${errors.headquarters_clinica ? styles.inputError : ''}`}
                 disabled={isLoading}
+                aria-describedby={errors.headquarters_clinica ? "error-headquarters_clinica" : undefined}
               >
-                <option value="">Seleccione una opción</option>
-                {clinicasOptions.map((option, index) => (
+                <option value="">Seleccione una sede</option>
+                {clinicSedes.map((option, index) => (
                   <option key={index} value={option}>
                     {option}
                   </option>
                 ))}
               </select>
-              {errors.clinica && (
-                <span className={styles.inputErrorText}>
+              {errors.headquarters_clinica && (
+                <span className={styles.inputErrorText} id="error-headquarters_clinica">
                   <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.clinica}
+                  {errors.headquarters_clinica}
                 </span>
               )}
             </div>
 
             {/* Nombres y Apellidos Cliente */}
             <div className={styles.inputGroup}>
-              <label htmlFor="nombresApellidosCliente" className={styles.label}>
+              <label htmlFor="full_name_client" className={styles.label}>
                 Nombres y Apellidos Cliente
               </label>
               <input
                 type="text"
-                id="nombresApellidosCliente"
-                name="nombresApellidosCliente"
-                value={formData.nombresApellidosCliente}
+                id="full_name_client"
+                name="full_name_client"
+                value={formData.full_name_client}
                 onChange={handleInputChange}
-                className={`${styles.input} ${errors.nombresApellidosCliente ? styles.inputError : ''}`}
+                onBlur={handleBlur}
+                className={`${styles.input} ${errors.full_name_client ? styles.inputError : ''}`}
                 disabled={isLoading}
                 autoComplete="name"
+                placeholder="Ingrese el nombre del cliente"
+                aria-describedby={errors.full_name_client ? "error-full_name_client" : undefined}
               />
-              {errors.nombresApellidosCliente && (
+              {errors.full_name_client && (
                 <span className={styles.inputErrorText}>
                   <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.nombresApellidosCliente}
+                  {errors.full_name_client}
                 </span>
               )}
             </div>
 
-            {/* Especialidad Médica 
+            {/* Tipo de Documento */}
             <div className={styles.inputGroup}>
-              <label htmlFor="especialidadMedica" className={styles.label}>
-                Especialidad Médica de Interés <span className={styles.required}>(obligatorio)</span>
-              </label>
-              <select
-                id="especialidadMedica"
-                name="especialidadMedica"
-                value={formData.especialidadMedica}
-                onChange={handleInputChange}
-                className={`${styles.select} ${errors.especialidadMedica ? styles.inputError : ''}`}
-                disabled={isLoading}
-              >
-                <option value="">Elige categoría especialidades</option>
-                {especialidadesOptions.map((option, index) => (
-                  <option key={index} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              {errors.especialidadMedica && (
-                <span className={styles.inputErrorText}>
-                  <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.especialidadMedica}
-                </span>
-              )}
-            </div>  */}
-
-               {/* Tipo de Documento */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="tipoDocumento" className={styles.label}>
+              <label htmlFor="document_type" className={styles.label}>
                 Tipo de Documento <span className={styles.required}>(obligatorio)</span>
               </label>
               <select
-                id="tipoDocumento"
-                name="tipoDocumento"
-                value={formData.tipoDocumento}
+                id="document_type"
+                name="document_type"
+                value={formData.document_type}
                 onChange={handleInputChange}
-                className={`${styles.select} ${errors.tipoDocumento ? styles.inputError : ''}`}
+                onBlur={handleBlur}
+                className={`${styles.select} ${errors.document_type ? styles.inputError : ''}`}
                 disabled={isLoading}
+                aria-describedby={errors.document_type ? "error-document_type" : undefined}
               >
-                <option value="">Seleccione una opción</option>
+                <option value="">Seleccione tipo de documento</option>
                 {tipoDocumentoOptions.map((option, index) => (
                   <option key={index} value={option}>
                     {option}
                   </option>
                 ))}
               </select>
-              {errors.tipoDocumento && (
+              {errors.document_type && (
                 <span className={styles.inputErrorText}>
                   <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.tipoDocumento}
+                  {errors.document_type}
                 </span>
               )}
             </div>
 
             {/* DNI */}
             <div className={styles.inputGroup}>
-              <label htmlFor="dni" className={styles.label}>
-                N° DNI <span className={styles.required}>(obligatorio)</span>
+              <label htmlFor="identification_number" className={styles.label}>
+                N° Documento <span className={styles.required}>(obligatorio)</span>
               </label>
               <input
                 type="text"
-                id="dni"
-                name="dni"
-                value={formData.dni}
+                id="identification_number"
+                name="identification_number"
+                value={formData.identification_number}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 maxLength={8}
-                className={`${styles.input} ${errors.dni ? styles.inputError : ''}`}
+                className={`${styles.input} ${errors.identification_number ? styles.inputError : ''}`}
                 disabled={isLoading}
                 autoComplete="off"
+                placeholder="Ingrese número de documento"
+                aria-describedby={errors.identification_number ? "error-identification_number" : undefined}
               />
-              {errors.dni && (
+              {errors.identification_number && (
                 <span className={styles.inputErrorText}>
                   <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.dni}
+                  {errors.identification_number}
                 </span>
               )}
             </div>
 
             {/* Ingreso Mensual */}
             <div className={styles.inputGroup}>
-              <label htmlFor="ingresoMensualPromedio" className={styles.label}>
+              <label htmlFor="average_income" className={styles.label}>
                 Ingreso Mensual Promedio S/. <span className={styles.required}>(obligatorio)</span>
               </label>
               <input
                 type="number"
-                id="ingresoMensualPromedio"
-                name="ingresoMensualPromedio"
-                value={formData.ingresoMensualPromedio}
+                id="average_income"
+                name="average_income"
+                value={formData.average_income}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 step="0.01"
-                className={`${styles.input} ${errors.ingresoMensualPromedio ? styles.inputError : ''}`}
+                min="1"
+                className={`${styles.input} ${errors.average_income ? styles.inputError : ''}`}
                 disabled={isLoading}
                 autoComplete="off"
+                placeholder="Ingrese monto en S/."
+                aria-describedby={errors.average_income ? "error-average_income" : undefined}
               />
-              {errors.ingresoMensualPromedio && (
+              {errors.average_income && (
                 <span className={styles.inputErrorText}>
                   <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.ingresoMensualPromedio}
+                  {errors.average_income}
                 </span>
               )}
             </div>
-
-             {/* costo aproximado de  tratamiento */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="costoAproximadoTratamiento" className={styles.label}>
-                Costo Apróx. Tratamiento S/. <span className={styles.required}>(obligatorio)</span>
-              </label>
-              <input
-                type="number"
-                id="costoAproximadoTratamiento"
-                name="costoAproximadoTratamiento"
-                value={formData.costoAproximadoTratamiento}
-                onChange={handleInputChange}
-                step="0.01"
-                className={`${styles.input} ${errors.costoAproximadoTratamiento ? styles.inputError : ''}`}
-                disabled={isLoading}
-                autoComplete="off"
-              />
-              {errors.costoAproximadoTratamiento && (
-                <span className={styles.inputErrorText}>
-                  <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.costoAproximadoTratamiento}
-                </span>
-              )}
-            </div>
-
-            {/* Código Tratamiento 
-            <div className={styles.inputGroup}>
-              <label htmlFor="codigoAprovTratamiento" className={styles.label}>
-                Código Aprob. Tratamiento S/. <span className={styles.required}>(obligatorio)</span>
-              </label>
-              <input
-                type="text"
-                id="codigoAprovTratamiento"
-                name="codigoAprovTratamiento"
-                value={formData.codigoAprovTratamiento}
-                onChange={handleInputChange}
-                className={`${styles.input} ${errors.codigoAprovTratamiento ? styles.inputError : ''}`}
-                disabled={isLoading}
-                autoComplete="off"
-              />
-              {errors.codigoAprovTratamiento && (
-                <span className={styles.inputErrorText}>
-                  <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.codigoAprovTratamiento}
-                </span>
-              )}
-            </div>  */}
 
             {/* Teléfono */}
             <div className={styles.inputGroup}>
-              <label htmlFor="telefono" className={styles.label}>
+              <label htmlFor="phone" className={styles.label}>
                 Teléfono <span className={styles.required}>(obligatorio)</span>
               </label>
               <input
                 type="tel"
-                id="telefono"
-                name="telefono"
+                id="phone"
+                name="phone"
                 maxLength={20}
-                value={formData.telefono}
+                value={formData.phone}
                 onChange={handleInputChange}
-                className={`${styles.input} ${errors.telefono ? styles.inputError : ''}`}
+                onBlur={handleBlur}
+                className={`${styles.input} ${errors.phone ? styles.inputError : ''}`}
                 disabled={isLoading}
                 autoComplete="tel"
+                placeholder="Ej. 987654321"
+                aria-describedby={errors.phone ? "error-phone" : undefined}
               />
-              {errors.telefono && (
+              {errors.phone && (
                 <span className={styles.inputErrorText}>
                   <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.telefono}
+                  {errors.phone}
                 </span>
               )}
             </div>
 
-            {/* Correo Electrónico 
-            <div className={styles.inputGroup}>
-              <label htmlFor="correoElectronico" className={styles.label}>
-                Correo electrónico <span className={styles.optional}>(Opcional)</span>
-              </label>
-              <input
-                type="email"
-                id="correoElectronico"
-                name="correoElectronico"
-                value={formData.correoElectronico}
-                onChange={handleInputChange}
-                className={`${styles.input} ${errors.correoElectronico ? styles.inputError : ''}`}
-                disabled={isLoading}
-                autoComplete="email"
-              />
-              {errors.correoElectronico && (
-                <span className={styles.inputErrorText}>
-                  <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.correoElectronico}
-                </span>
-              )}
-            </div>  */}
-
-            {/* Botones */}
+            {/* Botón de envío */}
             <div className={styles.buttonContainer}>
               <button
                 type="submit"
                 className={styles.submitButton}
                 disabled={isLoading}
+                aria-busy={isLoading}
               >
                 {isLoading ? (
                   <span className={styles.loadingText}>
-                    <span className={styles.spinner}></span>
+                    <span className={styles.spinner} aria-hidden="true"></span>
                     Enviando...
                   </span>
                 ) : (
-                  "Enviar"
+                  <>
+                    <span>Enviar solicitud</span>
+                    <span className={styles.buttonIcon}>→</span>
+                  </>
                 )}
               </button>
             </div>
@@ -624,7 +549,6 @@ const RegisterPatients: React.FC = () => {
         {/* Footer */}
        <Footer />
       </div>
-    )}
     </>
   );
 };

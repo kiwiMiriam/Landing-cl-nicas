@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import styles from './landingClinicas.module.css';
 import kiwiTextGreenIcon from '../../assets/kiwiTextGreenLightIcon.svg';
-import Footer from '../components/footer';
+import Footer from '../../components/footer/footer';
 
 interface FormData {
   nombresApellidosRecepcionista: string;
