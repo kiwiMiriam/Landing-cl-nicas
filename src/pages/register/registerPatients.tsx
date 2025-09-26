@@ -28,6 +28,10 @@ const RegisterPatients: React.FC = () => {
 
   // Obtener las sedes de la clínica seleccionada
   const clinicSedes = clinicId ? CLINIC_SEDES[clinicId] || [] : [];
+  
+  // Determinar si la clínica tiene una sola sede
+  const hasSingleLocation = clinicSedes.length === 1;
+  const singleLocation = hasSingleLocation ? clinicSedes[0] : '';
 
   // Estado para controlar si la clínica es válida
   const [isValidClinic, setIsValidClinic] = useState<boolean>(false);
@@ -43,17 +47,26 @@ const RegisterPatients: React.FC = () => {
         navigate('/not-found', { replace: true });
       } else {
         setIsValidClinic(true);
+        
+        // Si hay una sola sede, asignarla automáticamente al formulario
+        if (hasSingleLocation) {
+          setFormData(prev => ({
+            ...prev,
+            headquarters_clinica: singleLocation
+          }));
+        }
       }
       setIsValidating(false);
     };
 
     validateClinic();
-  }, [clinicId, navigate]);
+  }, [clinicId, navigate, hasSingleLocation, singleLocation]);
 
+  // Inicializar el formulario, autocompletando la sede si hay una única
   const [formData, setFormData] = useState<FormData>({
     full_name_receptionist: '',
     full_name_client: '',
-    headquarters_clinica: '',
+    headquarters_clinica: hasSingleLocation ? singleLocation : '',
     document_type: '',
     identification_number: '',
     average_income: '',
@@ -138,8 +151,11 @@ const RegisterPatients: React.FC = () => {
     const clientNameError = validators.validateName(formData.full_name_client);
     if (clientNameError) newErrors.full_name_client = clientNameError;
     
-    const sedeError = validators.validateSelection(formData.headquarters_clinica);
-    if (sedeError) newErrors.headquarters_clinica = sedeError;
+    // Solo validamos la selección de sede si hay múltiples sedes
+    if (!hasSingleLocation) {
+      const sedeError = validators.validateSelection(formData.headquarters_clinica);
+      if (sedeError) newErrors.headquarters_clinica = sedeError;
+    }
     
     const docTypeError = validators.validateSelection(formData.document_type);
     if (docTypeError) newErrors.document_type = docTypeError;
@@ -163,6 +179,8 @@ const RegisterPatients: React.FC = () => {
       case 'full_name_client':
         return validators.validateName(value);
       case 'headquarters_clinica':
+        // No validamos la selección si hay una sola sede (ya está preseleccionada)
+        return hasSingleLocation ? '' : validators.validateSelection(value);
       case 'document_type':
         return validators.validateSelection(value);
       case 'identification_number':
@@ -220,16 +238,29 @@ const RegisterPatients: React.FC = () => {
 
     try {
       // Preparar payload con datos del login, formulario y clínica actual
+      // Asegurar que la sede esté incluida correctamente en el payload
+      const formDataWithSede = {
+        ...formData,
+        // Siempre incluimos la sede correcta en el payload
+        headquarters_clinica: hasSingleLocation 
+          ? singleLocation // Cuando hay una sola sede, usamos esa
+          : formData.headquarters_clinica // Cuando hay múltiples, usamos la seleccionada
+      };
+      
       const payload = {
-        formData: formData,
+        formData: formDataWithSede,
         timestamp: new Date().toISOString(),
         source: 'register-patients',
-        clinicId: clinicId // Incluimos el parámetro de la URL
+        clinicId: clinicId, // Incluimos el parámetro de la URL
+        //hasSingleLocation: hasSingleLocation, // Información útil para análisis
+        // Si hay una sola sede, la incluimos también a nivel raíz para facilitar procesamiento
+        //singleLocation: hasSingleLocation ? singleLocation : undefined
       };
 
       // Uso de la variable de entorno o URL por defecto
       const endpoint = import.meta.env.VITE_API_ENDPOINT_FORM || 'https://jsonplaceholder.typicode.com/posts';
       console.log("Endpoint utilizado:", endpoint);
+      console.log("Sede incluida:", formDataWithSede.headquarters_clinica);
       console.log("Enviando payload:", JSON.stringify(payload, null, 2));
       
       // Envío a endpoint real
@@ -353,35 +384,45 @@ const RegisterPatients: React.FC = () => {
               )}
             </div>
 
-               {/* Clínica */}
-            <div className={styles.inputGroup}>
-              <label htmlFor="headquarters_clinica" className={styles.label}>
-                Sede <span className={styles.required}>(obligatorio)</span>
-              </label>
-              <select
+               {/* Sede de la Clínica - Solo visible si hay múltiples sedes */}
+            {!hasSingleLocation ? (
+              <div className={styles.inputGroup}>
+                <label htmlFor="headquarters_clinica" className={styles.label}>
+                  Sede <span className={styles.required}>(obligatorio)</span>
+                </label>
+                <select
+                  id="headquarters_clinica"
+                  name="headquarters_clinica"
+                  value={formData.headquarters_clinica}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  className={`${styles.select} ${errors.headquarters_clinica ? styles.inputError : ''}`}
+                  disabled={isLoading}
+                  aria-describedby={errors.headquarters_clinica ? "error-headquarters_clinica" : undefined}
+                >
+                  <option value="">Seleccione una sede</option>
+                  {clinicSedes.map((option, index) => (
+                    <option key={index} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                {errors.headquarters_clinica && (
+                  <span className={styles.inputErrorText} id="error-headquarters_clinica">
+                    <i className="bi bi-exclamation-circle iconAlert"></i>
+                    {errors.headquarters_clinica}
+                  </span>
+                )}
+              </div>
+            ) : (
+              // Cuando hay una única sede, incluimos un campo oculto pero no mostramos nada visualmente
+              <input 
+                type="hidden" 
                 id="headquarters_clinica"
                 name="headquarters_clinica"
-                value={formData.headquarters_clinica}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
-                className={`${styles.select} ${errors.headquarters_clinica ? styles.inputError : ''}`}
-                disabled={isLoading}
-                aria-describedby={errors.headquarters_clinica ? "error-headquarters_clinica" : undefined}
-              >
-                <option value="">Seleccione una sede</option>
-                {clinicSedes.map((option, index) => (
-                  <option key={index} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              {errors.headquarters_clinica && (
-                <span className={styles.inputErrorText} id="error-headquarters_clinica">
-                  <i className="bi bi-exclamation-circle iconAlert"></i>
-                  {errors.headquarters_clinica}
-                </span>
-              )}
-            </div>
+                value={singleLocation}
+              />
+            )}
 
             {/* Nombres y Apellidos Cliente */}
             <div className={styles.inputGroup}>
@@ -536,8 +577,8 @@ const RegisterPatients: React.FC = () => {
                   </span>
                 ) : (
                   <>
-                    <span>Enviar solicitud</span>
-                    <span className={styles.buttonIcon}>→</span>
+                    <span>Enviar</span>
+                    <span className={styles.buttonIcon}></span>
                   </>
                 )}
               </button>
