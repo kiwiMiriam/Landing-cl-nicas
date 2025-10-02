@@ -1,7 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/login/LoginPage';
-import LandingClinicas from './pages/landingClinicas/landingClinicas';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+//import LoginPage from './pages/login/LoginPage';
+//import LandingClinicas from './pages/landingClinicas/landingClinicas';
 import RegisterPatients from './pages/register/registerPatients';
 import NotFound from './pages/notFound/notFound';
 
@@ -11,9 +11,11 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
+        {/* Rutas temporalmente deshabilitadas
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/landing-clinicas" element={<LandingClinicas />} />
+        */}
         {/* Ruta dinámica con parámetro clinicId */}
         <Route path="/register-patients/:clinicId" element={<RegisterPatients />} />
         {/* Ruta de fallback para /register-patients sin parámetro */}
